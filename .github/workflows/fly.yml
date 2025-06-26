@@ -1,0 +1,24 @@
+name: Deploy to fly.io
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Create app on fly.io if it doesn't exist
+        run: |
+          APP_NAME=$(grep -m 1 "app = " fly.toml | cut -d '"' -f 2)
+          if ! flyctl apps list | grep -q "\b$APP_NAME\b"; then
+            flyctl apps create --name $APP_NAME --org personal
+          fi
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Deploy app on fly.io
+        run: flyctl deploy --yes --dockerfile Dockerfile --config fly.toml
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
