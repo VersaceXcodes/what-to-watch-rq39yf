@@ -1,0 +1,978 @@
+openapi: 3.0.0
+info:
+  title: CineCrib API
+  version: 1.0.0
+  description: API for CineCrib, a movie/TV show recommendation application. Helps
+    users discover content based on mood, streaming services, and genre
+    preferences.
+servers:
+  - url: http://localhost:3000
+    description: Development server
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/auth/signup:
+    post:
+      summary: Register a new user
+      operationId: auth_sign_up
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSignUpRequest"
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
+          description: Invalid input or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: User with this email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/auth/login:
+    post:
+      summary: Log in an existing user
+      operationId: auth_login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
+          description: Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/auth/me:
+    get:
+      summary: Get current authenticated user's profile
+      operationId: auth_get_me
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        "401":
+          description: Unauthorized - No token or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/users/me/preferences:
+    get:
+      summary: Get logged-in user's saved default preferences
+      operationId: get_user_preferences
+      tags:
+        - User Preferences
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferencesGetResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: Update logged-in user's saved default preferences
+      operationId: update_user_preferences
+      tags:
+        - User Preferences
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPreferencesUpdateRequest"
+      responses:
+        "200":
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Invalid input or missing fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/recommendations:
+    post:
+      summary: Get movie and TV show recommendations based on filters.
+      operationId: get_recommendations
+      tags:
+        - Recommendations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationRequest"
+      responses:
+        "200":
+          description: List of recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationResponse"
+        "400":
+          description: Invalid input, e.g., missing required filter parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/users/me/watchlist:
+    post:
+      summary: Add content to the logged-in user's watchlist
+      operationId: watchlist_add_item
+      tags:
+        - Watchlist
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WatchlistAddItemRequest"
+      responses:
+        "201":
+          description: Content added to watchlist successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Invalid content_uid or missing field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Content not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Content already in watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: Get the logged-in user's watchlist
+      operationId: watchlist_get_all_items
+      tags:
+        - Watchlist
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Watchlist items retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WatchlistGetResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/users/me/watchlist/{content_uid}:
+    delete:
+      summary: Remove content from the logged-in user's watchlist
+      operationId: watchlist_remove_item
+      tags:
+        - Watchlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: content_uid
+          in: path
+          required: true
+          description: Unique identifier of the content to remove from watchlist
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Content removed from watchlist successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Content not found in watchlist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/content/{content_uid}:
+    get:
+      summary: Get detailed information for a specific movie or TV show
+      operationId: get_content_details
+      tags:
+        - Content
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: content_uid
+          in: path
+          required: true
+          description: Unique identifier of the content (movie or TV show)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Content details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDetailsResponse"
+        "404":
+          description: Content not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/lookup/streaming_services:
+    get:
+      summary: Get a list of all available streaming services
+      operationId: lookup_get_streaming_services
+      tags:
+        - Lookup Data
+      responses:
+        "200":
+          description: List of streaming services retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookupStreamingServicesResponse"
+  /api/v1/lookup/genres:
+    get:
+      summary: Get a list of all available content genres
+      operationId: lookup_get_genres
+      tags:
+        - Lookup Data
+      responses:
+        "200":
+          description: List of genres retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookupGenresResponse"
+  /api/v1/lookup/moods:
+    get:
+      summary: Get a list of all predefined moods
+      operationId: lookup_get_moods
+      tags:
+        - Lookup Data
+      responses:
+        "200":
+          description: List of moods retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookupMoodsResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SuccessResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the operation was successful.
+          example: true
+        message:
+          type: string
+          description: A descriptive message about the operation's outcome.
+          example: Operation completed successfully
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the operation was successful. Will be false for errors.
+          example: false
+        message:
+          type: string
+          description: A descriptive error message.
+          example: Invalid credentials
+    AuthSignUpRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address.
+          example: user@example.com
+        password:
+          type: string
+          description: User's chosen password (min 8 chars, mix of types recommended).
+          minLength: 8
+          example: MyStrongP@ssw0rd!
+    AuthLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address.
+          example: user@example.com
+        password:
+          type: string
+          description: User's password.
+          example: MyStrongP@ssw0rd!
+        remember_me:
+          type: boolean
+          description: Optional. If true, attempts to keep the user logged in across
+            sessions.
+          example: true
+    AuthSuccessResponse:
+      type: object
+      required:
+        - success
+        - message
+        - user
+        - token
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: User registered successfully
+        user:
+          type: object
+          properties:
+            uid:
+              type: string
+              description: Unique identifier for the user.
+              example: u-12345
+            email:
+              type: string
+              format: email
+              example: user@example.com
+            created_at:
+              type: string
+              format: date-time
+              description: Timestamp of account creation.
+              example: 2024-03-15T10:30:00Z
+        token:
+          type: string
+          description: JWT Bearer token for subsequent authenticated requests.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    UserProfileResponse:
+      type: object
+      required:
+        - success
+        - user
+      properties:
+        success:
+          type: boolean
+          example: true
+        user:
+          type: object
+          required:
+            - uid
+            - email
+            - created_at
+            - updated_at
+          properties:
+            uid:
+              type: string
+              description: Unique identifier for the user.
+            email:
+              type: string
+              format: email
+              description: User's email address.
+            created_at:
+              type: string
+              format: date-time
+              description: Timestamp of account creation (ISO 8601).
+            updated_at:
+              type: string
+              format: date-time
+              description: Timestamp of last account update (ISO 8601).
+    UserPreferencesGetResponse:
+      type: object
+      required:
+        - success
+        - preferences
+      properties:
+        success:
+          type: boolean
+          example: true
+        preferences:
+          type: object
+          required:
+            - min_release_year
+            - max_release_year
+            - preferred_duration_category
+            - min_rating
+            - preferred_content_type
+            - parental_rating_filter_json
+          properties:
+            default_mood_uid:
+              type: string
+              description: UID of the default mood selected. Null if none.
+              nullable: true
+            min_release_year:
+              type: number
+              description: Minimum release year for recommendations.
+            max_release_year:
+              type: number
+              description: Maximum release year for recommendations.
+            preferred_duration_category:
+              type: string
+              description: Preferred content duration category.
+              enum:
+                - any
+                - short
+                - medium
+                - long
+            min_rating:
+              type: number
+              format: float
+              description: Minimum aggregated rating (e.g., IMDb/RT score).
+            preferred_content_type:
+              type: string
+              description: Preferred content type.
+              enum:
+                - both
+                - movie
+                - tv_show
+            parental_rating_filter_json:
+              type: string
+              description: JSON array string of preferred parental ratings (e.g., '["G",
+                "PG-13"]').
+            selected_streaming_services:
+              type: array
+              description: List of streaming service UIDs the user has selected as default.
+              items:
+                $ref: "#/components/schemas/StreamingServiceRef"
+            selected_genres:
+              type: array
+              description: List of genre UIDs the user has selected as default.
+              items:
+                $ref: "#/components/schemas/GenreRef"
+            excluded_genres:
+              type: array
+              description: List of genre UIDs the user has excluded from recommendations by
+                default.
+              items:
+                $ref: "#/components/schemas/GenreRef"
+            excluded_streaming_services:
+              type: array
+              description: List of streaming service UIDs the user has excluded from
+                recommendations by default.
+              items:
+                $ref: "#/components/schemas/StreamingServiceRef"
+    UserPreferencesUpdateRequest:
+      type: object
+      properties:
+        default_mood_uid:
+          type: string
+          description: UID of the default mood selected. Null if none.
+          nullable: true
+        min_release_year:
+          type: number
+          description: Minimum release year for recommendations.
+          default: 1900
+        max_release_year:
+          type: number
+          description: Maximum release year for recommendations.
+          default: 2024
+        preferred_duration_category:
+          type: string
+          description: Preferred content duration category.
+          enum:
+            - any
+            - short
+            - medium
+            - long
+          default: any
+        min_rating:
+          type: number
+          format: float
+          description: Minimum aggregated rating (e.g., IMDb/RT score).
+          default: 0
+        preferred_content_type:
+          type: string
+          description: Preferred content type.
+          enum:
+            - both
+            - movie
+            - tv_show
+          default: both
+        parental_rating_filter_json:
+          type: string
+          description: JSON array string of preferred parental ratings (e.g., '["G",
+            "PG-13"]').
+          default: "[]"
+        selected_service_uids:
+          type: array
+          description: Array of UIDs for streaming services the user subscribes to.
+          items:
+            type: string
+        selected_genre_uids:
+          type: array
+          description: Array of UIDs for preferred genres.
+          items:
+            type: string
+        excluded_genre_uids:
+          type: array
+          description: Array of UIDs for genres to explicitly exclude.
+          items:
+            type: string
+        excluded_service_uids:
+          type: array
+          description: Array of UIDs for streaming services to explicitly exclude.
+          items:
+            type: string
+    RecommendationRequest:
+      type: object
+      required:
+        - streaming_service_uids
+        - genre_uids
+        - min_release_year
+        - max_release_year
+        - min_rating
+        - preferred_content_type
+      properties:
+        mood_uid:
+          type: string
+          description: UID of the selected mood.
+          nullable: true
+        streaming_service_uids:
+          type: array
+          description: Array of UIDs for services user subscribes to.
+          items:
+            type: string
+        genre_uids:
+          type: array
+          description: Array of UIDs for preferred genres.
+          items:
+            type: string
+        min_release_year:
+          type: number
+          description: Minimum release year.
+          default: 1900
+        max_release_year:
+          type: number
+          description: Maximum release year.
+          default: 2024
+        preferred_duration_category:
+          type: string
+          description: Preferred content duration category.
+          enum:
+            - any
+            - short
+            - medium
+            - long
+          default: any
+        min_rating:
+          type: number
+          format: float
+          description: Minimum aggregated rating (e.g., IMDb/RT score).
+          default: 0
+        preferred_content_type:
+          type: string
+          description: Preferred content type.
+          enum:
+            - both
+            - movie
+            - tv_show
+          default: both
+        parental_rating_filter_json:
+          type: string
+          description: JSON array string of selected parental ratings (e.g., '["G",
+            "PG-13"]').
+          default: "[]"
+        excluded_genre_uids:
+          type: array
+          description: Array of UIDs for genres to explicitly exclude.
+          items:
+            type: string
+        excluded_service_uids:
+          type: array
+          description: Array of UIDs for services to explicitly exclude.
+          items:
+            type: string
+        page:
+          type: number
+          description: Current page number for pagination (starts at 1).
+          minimum: 1
+          default: 1
+        page_size:
+          type: number
+          description: Number of results per page.
+          minimum: 1
+          maximum: 100
+          default: 20
+    RecommendationResponse:
+      type: object
+      required:
+        - success
+        - recommendations
+        - total_results
+        - page
+        - page_size
+      properties:
+        success:
+          type: boolean
+          example: true
+        recommendations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentMetadata"
+        total_results:
+          type: number
+          description: Total number of results matching filters, without pagination.
+        page:
+          type: number
+          description: Current page number returned.
+        page_size:
+          type: number
+          description: Number of results per page returned.
+    WatchlistAddItemRequest:
+      type: object
+      required:
+        - content_uid
+      properties:
+        content_uid:
+          type: string
+          description: UID of the content to add to the watchlist.
+    WatchlistGetResponse:
+      type: object
+      required:
+        - success
+        - watchlist
+      properties:
+        success:
+          type: boolean
+          example: true
+        watchlist:
+          type: array
+          items:
+            type: object
+            allOf:
+              - $ref: "#/components/schemas/ContentMetadata"
+              - type: object
+                required:
+                  - added_at
+                properties:
+                  added_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the content was added to the watchlist (ISO 8601).
+    ContentDetailsResponse:
+      type: object
+      required:
+        - success
+        - content
+      properties:
+        success:
+          type: boolean
+          example: true
+        content:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/ContentMetadata"
+            - type: object
+              properties:
+                is_on_watchlist:
+                  type: boolean
+                  description: True if the content is in the authenticated user's watchlist; only
+                    present for authenticated requests.
+                  nullable: true
+    ContentMetadata:
+      type: object
+      required:
+        - uid
+        - title
+        - release_year
+        - content_type
+        - poster_url
+        - synopsis
+        - genres
+        - available_on_services
+      properties:
+        uid:
+          type: string
+          description: Unique identifier for the content.
+        external_api_id:
+          type: string
+          description: Identifier from the external content API (e.g., TMDB ID).
+        title:
+          type: string
+          description: Title of the movie or TV show.
+        release_year:
+          type: number
+          description: Year of original release.
+          nullable: true
+        content_type:
+          type: string
+          description: Indicates if it's a 'movie' or 'tv_show'.
+          enum:
+            - movie
+            - tv_show
+        poster_url:
+          type: string
+          format: uri
+          description: URL for the content's poster image.
+          nullable: true
+        synopsis:
+          type: string
+          description: Full descriptive summary of the content.
+          nullable: true
+        tagline:
+          type: string
+          description: Short, catchy summary.
+          nullable: true
+        duration_minutes:
+          type: number
+          description: Runtime in minutes for movies. Null for TV shows, or total series
+            duration.
+          nullable: true
+        number_of_seasons:
+          type: number
+          description: Number of seasons for TV shows. Null for movies.
+          nullable: true
+        imdb_rating:
+          type: number
+          format: float
+          description: Aggregated IMDb rating (e.g., 7.8).
+          nullable: true
+        rotten_tomatoes_score:
+          type: number
+          description: Aggregated Rotten Tomatoes score (e.g., 92).
+          nullable: true
+        parental_rating:
+          type: string
+          description: The MPAA/TV parental rating (e.g., 'PG-13', 'TV-MA').
+          nullable: true
+        director:
+          type: string
+          description: Primary director(s) name(s).
+          nullable: true
+        main_cast:
+          type: string
+          description: JSON array string of prominent cast members' names (e.g., '["Actor
+            1", "Actor 2"]').
+          nullable: true
+        genres:
+          type: array
+          description: List of genres associated with the content.
+          items:
+            $ref: "#/components/schemas/GenreRef"
+        available_on_services:
+          type: array
+          description: List of streaming services where the content is available,
+            including watch links.
+          items:
+            $ref: "#/components/schemas/AvailableServiceDetails"
+    LookupStreamingServicesResponse:
+      type: object
+      required:
+        - success
+        - streaming_services
+      properties:
+        success:
+          type: boolean
+          example: true
+        streaming_services:
+          type: array
+          items:
+            $ref: "#/components/schemas/StreamingServiceDetails"
+    LookupGenresResponse:
+      type: object
+      required:
+        - success
+        - genres
+      properties:
+        success:
+          type: boolean
+          example: true
+        genres:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenreRef"
+    LookupMoodsResponse:
+      type: object
+      required:
+        - success
+        - moods
+      properties:
+        success:
+          type: boolean
+          example: true
+        moods:
+          type: array
+          items:
+            $ref: "#/components/schemas/MoodDetails"
+    StreamingServiceRef:
+      type: object
+      required:
+        - uid
+        - name
+      properties:
+        uid:
+          type: string
+          description: Unique identifier for the streaming service.
+        name:
+          type: string
+          description: Name of the streaming service.
+        logo_url:
+          type: string
+          format: uri
+          description: URL to the service's logo.
+          nullable: true
+    StreamingServiceDetails:
+      allOf:
+        - $ref: "#/components/schemas/StreamingServiceRef"
+        - type: object
+          properties:
+            base_url:
+              type: string
+              format: uri
+              description: Base URL for constructing direct watch links to the service.
+              nullable: true
+            is_active:
+              type: boolean
+              description: Flag indicating if the service is currently active and visible.
+    GenreRef:
+      type: object
+      required:
+        - uid
+        - name
+      properties:
+        uid:
+          type: string
+          description: Unique identifier for the genre.
+        name:
+          type: string
+          description: Name of the genre.
+    MoodDetails:
+      type: object
+      required:
+        - uid
+        - name
+      properties:
+        uid:
+          type: string
+          description: Unique identifier for the mood.
+        name:
+          type: string
+          description: Name of the mood.
+        icon_emoji:
+          type: string
+          description: Optional emoji representation for the mood.
+          nullable: true
+    AvailableServiceDetails:
+      type: object
+      required:
+        - service_uid
+        - name
+        - logo_url
+        - watch_link
+      properties:
+        service_uid:
+          type: string
+          description: Unique identifier for the streaming service.
+        name:
+          type: string
+          description: Name of the streaming service.
+        logo_url:
+          type: string
+          format: uri
+          description: URL to the service's logo.
+          nullable: true
+        watch_link:
+          type: string
+          format: uri
+          description: The specific deep link to play/view this content on this service.
+          nullable: true
